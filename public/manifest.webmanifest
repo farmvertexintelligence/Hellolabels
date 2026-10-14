@@ -1,0 +1,10 @@
+{
+  "name": "hellolabels",
+  "short_name": "hellolabels",
+  "description": "Custom labelled water bottles and labels — Mettur, Tamil Nadu",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F3EC",
+  "theme_color": "#F6F3EC",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

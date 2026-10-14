@@ -1,0 +1,51 @@
+{
+  "name": "hellolabels",
+  "version": "1.0.0",
+  "private": true,
+  "description": "hellolabels \u2014 custom label printing and branded water bottles, Mettur, Salem District, Tamil Nadu",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "fonts": "node scripts/fetch-fonts.mjs",
+    "db:seed-sql": "tsx scripts/generate-seed.ts",
+    "test:db": "node scripts/test-db.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@pdf-lib/fontkit": "^1.1.1",
+    "@resvg/resvg-js": "^2.6.2",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.3",
+    "fontkit": "^2.0.4",
+    "jsqr": "^1.4.0",
+    "next": "^15.5.27",
+    "pdf-lib": "^1.17.1",
+    "qrcode": "^1.5.4",
+    "razorpay": "^2.9.8",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "server-only": "^0.0.1",
+    "sharp": "^0.35.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
+    "@types/fontkit": "^2.0.9",
+    "@types/node": "^26.6.5",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.27",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.4"
+  }
+}
