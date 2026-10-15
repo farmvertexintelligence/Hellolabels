@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getUser } from "@/lib/server/auth";
 import { getDict } from "@/lib/i18n/server";
 import { CartButton, LangToggle, MobileMenu } from "./HeaderClient";
-import { Logo } from "./Squares";
+import { Logo, Squares } from "./Squares";
 
 export async function SiteHeader() {
   const { t } = await getDict();
@@ -16,6 +16,8 @@ export async function SiteHeader() {
     { href: "/dealer/apply", label: t.nav.dealers },
   ];
   return (
+    <>
+    <div className="announce" role="note"><Squares />{t.home.announce}</div>
     <header className="site-header">
       <div className="wrap bar" style={{ position: "relative" }}>
         <Logo />
@@ -39,5 +41,6 @@ export async function SiteHeader() {
         </div>
       </div>
     </header>
+    </>
   );
 }

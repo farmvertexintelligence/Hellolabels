@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { ScrollFx } from "@/components/motion/ScrollFx";
 import { LangProvider } from "@/lib/i18n/client";
 import { getLang } from "@/lib/i18n/server";
 import { env } from "@/lib/env";
@@ -31,6 +32,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <LangProvider lang={lang}>
+          <ScrollFx />
           <SiteHeader />
           <main id="main">{children}</main>
           <SiteFooter />

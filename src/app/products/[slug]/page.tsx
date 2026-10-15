@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BottleIcon } from "@/components/BottleIcon";
+import { ProductCard } from "@/components/ProductCard";
+import { FlipCard } from "@/components/shop/Interactive";
+import { LabelBottle } from "@/components/shop/LabelBottle";
 import { Eyebrow } from "@/components/Squares";
 import { findLabelSize, findPrice, findProductBySlug, GLASS_PACKING_NOTE, notSellableReason } from "@/lib/catalog/helpers";
 import { DEFAULT_PRODUCTS } from "@/lib/catalog/defaults";
-import { formatInr } from "@/lib/commerce/pricing";
 import { TEMPLATES } from "@/lib/design/templates";
+import { BLEED_MM } from "@/lib/design/zones";
 import { getDict } from "@/lib/i18n/server";
 import { getCatalog } from "@/lib/server/catalog";
+import { BuyBox } from "./BuyBox";
 
 export const revalidate = 300;
 
@@ -33,11 +36,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const catalog = await getCatalog();
   const p = findProductBySlug(catalog, slug);
   if (!p || !p.active) notFound();
-  const size = findLabelSize(catalog, p.labelSizeIds[0]);
+  const size = findLabelSize(catalog, p.labelSizeIds[0])!;
   const ev = findPrice(catalog, p, "event");
   const sh = findPrice(catalog, p, "shop");
-  const closed = notSellableReason(catalog, p, p.kind === "label_only" ? "label" : "event");
+  const lb = findPrice(catalog, p, "label");
+  const closed = Boolean(notSellableReason(catalog, p, p.kind === "label_only" ? "label" : "event"));
   const name = lang === "ta" ? p.nameTa : p.nameEn;
+  const water = p.kind === "water_bottle";
+  const pv = (id: string, s: number, l: string = lang) => `/api/preview?t=${id}&s=${s}&size=${size.id}&lang=${l}&w=360`;
+  const related = catalog.products.filter((x) => x.active && x.id !== p.id && x.kind === p.kind && x.bottleType === p.bottleType).slice(0, 4);
   const ld = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -47,52 +54,55 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     offers: ev && !closed ? { "@type": "Offer", priceCurrency: "INR", price: (ev.unitPricePaise / 100).toFixed(2), availability: "https://schema.org/InStock" } : undefined,
   };
   return (
-    <div className="wrap section">
+    <div className="wrap section" style={{ paddingTop: 20 }}>
       <nav className="small" aria-label="Breadcrumb"><Link href="/products" className="link">{t.product.allProducts}</Link> / {name}</nav>
-      <div className="hero-grid" style={{ marginTop: 20 }}>
-        <div className="card" style={{ display: "grid", placeItems: "center", minHeight: 280 }}>
-          {p.kind === "water_bottle" ? <BottleIcon volumeMl={p.volumeMl!} glass={p.bottleType === "glass"} height={240} /> : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="label-thumb" src={`/api/preview?t=birthday&s=2&size=${size?.id}&lang=${lang}&w=400`} alt="" width={400} style={{ width: "55%" }} />
-          )}
+      <div className="pdp">
+        <div className="pdp-gallery" data-reveal>
+          <div className="pdp-stage">
+            <LabelBottle
+              labels={TEMPLATES.slice(0, 4).map((tp, i) => ({ src: pv(tp.id, i, i % 2 ? "ta" : lang), alt: `${tp.en} label on ${p.nameEn}` }))}
+              labelMm={{ w: size.widthMm + 2 * BLEED_MM, h: size.heightMm + 2 * BLEED_MM }}
+              volumeMl={water ? (p.volumeMl ?? 500) : 250}
+              diameterMm={size.diameterMm ?? 70}
+              glass={p.bottleType === "glass"}
+              width={190}
+            />
+          </div>
+          <p className="tiny center">{t.product.labelSize}: {size.widthMm} × {size.heightMm} mm · {t.product.capsWhite}</p>
         </div>
-        <div className="stack">
-          <Eyebrow>{p.kind === "water_bottle" ? t.product.waterTitle : t.product.labelsTitle}</Eyebrow>
+        <div className="stack" data-reveal style={{ "--d": 1 } as React.CSSProperties}>
+          <Eyebrow>{water ? t.product.waterTitle : t.product.labelsTitle}</Eyebrow>
           <h1 style={{ fontSize: "clamp(1.8rem,5vw,2.8rem)" }}>{name}</h1>
-          <div className="card stack">
-            {p.kind === "water_bottle" ? (
-              <>
-                {ev && <div className="row between"><span>{t.product.priceEvent}</span><b className="ink">{formatInr(ev.unitPricePaise)} <span className="tiny">/ {t.product.perBottle}</span></b></div>}
-                {sh && <div className="row between"><span>{t.product.priceShop}</span><b className="ink">{formatInr(sh.unitPricePaise)} <span className="tiny">/ {t.product.perBottle}</span></b></div>}
-                <div className="row between"><span>{t.product.minOrder}</span><b className="ink">{p.minQty} {t.product.cases} ({p.minQty * p.caseSize} {t.order.bottles})</b></div>
-                <div className="tiny">{t.product.bottlesPerCase} · {t.product.capsWhite} · {t.product.gstIncl}</div>
-              </>
-            ) : (
-              <>
-                {ev && <div className="row between"><span>{t.product.priceLabel}</span><b className="ink">{formatInr(ev.unitPricePaise)}</b></div>}
-                <div className="row between"><span>{t.product.minOrder}</span><b className="ink">{p.minQty} {t.order.labels}</b></div>
-              </>
-            )}
-            {size && <div className="row between"><span>{t.product.labelSize}</span><b className="ink">{p.labelSizeIds.map((id) => { const s = findLabelSize(catalog, id)!; return `${s.widthMm} × ${s.heightMm} mm`; }).join(" · ")}</b></div>}
-          </div>
+          <BuyBox product={p} prices={{ event: ev?.unitPricePaise, shop: sh?.unitPricePaise, label: lb?.unitPricePaise }} closed={closed} />
           {p.bottleType === "glass" && <div className="note">🫧 {GLASS_PACKING_NOTE[lang]}</div>}
-          {closed && <div className="note note-warn small">{t.product.notSellable}</div>}
-          <div className="row">
-            <Link className="btn btn-coral" href={`/design?product=${p.id}&segment=event`}>✨ {t.product.designThis}</Link>
-            {p.kind === "water_bottle" && <Link className="btn btn-ghost" href={`/design?product=${p.id}&segment=shop&template=shop`}>{t.home.segments[1].cta}</Link>}
-          </div>
+          <ul className="trust">{t.home.trust.map((x) => <li key={x}>{x}</li>)}</ul>
         </div>
       </div>
-      {size && (
-        <section style={{ marginTop: 48 }}>
-          <h2 style={{ fontSize: "1.4rem" }}>{t.home.templatesTitle}</h2>
-          <div className="label-grid">
-            {TEMPLATES.slice(0, 4).map((tp, i) => (
-              <Link key={tp.id} href={`/design?product=${p.id}&template=${tp.id}`} className="card-link">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/api/preview?t=${tp.id}&s=${i}&size=${size.id}&lang=${lang}&w=360`} alt={`${tp.en} template on ${p.nameEn}`} loading="lazy" />
-              </Link>
-            ))}
+
+      <section style={{ marginTop: 48 }}>
+        <h2 style={{ fontSize: "1.5rem" }} data-reveal>{t.home.templatesTitle}</h2>
+        <div className="flip-row">
+          {TEMPLATES.map((tp, i) => (
+            <div key={tp.id} data-reveal style={{ "--d": i % 4 } as React.CSSProperties}>
+              <FlipCard
+                // eslint-disable-next-line @next/next/no-img-element
+                front={<img src={pv(tp.id, (i + 1) % 4)} alt={`${tp.en} template on ${p.nameEn}`} loading="lazy" />}
+                title={lang === "ta" ? tp.ta : tp.en}
+                sub={`${size.widthMm} × ${size.heightMm} mm`}
+                href={`/design?product=${p.id}&template=${tp.id}`}
+                cta={t.home.useDesign}
+                color={["#8E1B1B", "#7B5CF0", "#2E5E3A", "#141A26", "#B22A12", "#0E6BA8", "#C1440E", "#2A0F4A", "#1B5E20"][i]}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {related.length > 0 && (
+        <section style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: "1.5rem" }} data-reveal>{t.product.allProducts}</h2>
+          <div className="pgrid">
+            {related.map((r, i) => <div key={r.id} data-reveal style={{ "--d": i } as React.CSSProperties}><ProductCard p={r} catalog={catalog} t={t} lang={lang} index={i + 2} /></div>)}
           </div>
         </section>
       )}
